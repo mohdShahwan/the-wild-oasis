@@ -9,7 +9,8 @@ export function useDeleteBooking() {
     mutationFn: deleteBookingApi,
     onSuccess: () => {
       toast.success("Booking successfully deleted");
-      queryClient.invalidateQueries({ active: true });
+      // This will invalidate all keys with "bookings" key
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
     onError: (err) => toast.error(err.message),
   });
