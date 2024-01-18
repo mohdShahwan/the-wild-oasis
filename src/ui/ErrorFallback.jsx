@@ -38,11 +38,13 @@ function ErrorFallback({ error, resetErrorBoundary }) {
     <>
       <GlobalStyles />
       <StyledErrorFallback>
-        <Heading as="h1">Something wen wrong 🤔</Heading>
-        <p>{error.message}</p>
-        <Button size="large" onClick={resetErrorBoundary}>
-          Try again
-        </Button>
+        <Box>
+          <Heading as="h1">Something wen wrong 🤔</Heading>
+          <p>{error.message}</p>
+          <Button size="large" onClick={resetErrorBoundary}>
+            Try again
+          </Button>
+        </Box>
       </StyledErrorFallback>
     </>
   );
