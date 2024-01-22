@@ -2,6 +2,20 @@ import { PAGE_SIZE } from "../utils/constants";
 import { getToday } from "../utils/helpers";
 import supabase from "./supabase";
 
+export async function createEditBooking(newBooking, id) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .insert([newBooking])
+    .select();
+
+  if (error) {
+    console.error(error);
+    throw new Error(`Cabin could not be ${id ? "edited" : "created"}`);
+  }
+
+  return data;
+}
+
 export async function getBookings({ filter, sortBy, page }) {
   let query = supabase
     .from("bookings")
