@@ -55,12 +55,6 @@ const Button = styled.button`
   }
 `;
 
-const Header = styled.div`
-  position: sticky;
-  top: 0;
-  right: 0;
-`;
-
 const ModalContext = createContext();
 
 function Modal({ children }) {
@@ -90,11 +84,9 @@ function Window({ children, name }) {
   return createPortal(
     <Overlay>
       <StyledModal ref={ref}>
-        <Header>
-          <Button onClick={close}>
-            <HiXMark />
-          </Button>
-        </Header>
+        <Button onClick={close}>
+          <HiXMark />
+        </Button>
 
         <div>{cloneElement(children, { onCloseModal: close })}</div>
       </StyledModal>

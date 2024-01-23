@@ -12,13 +12,15 @@ import "react-datepicker/dist/react-datepicker.css";
 import Textarea from "../../ui/Textarea";
 import { STATUSES } from "../../utils/constants";
 import { useGuests } from "./useGuests";
+import FormSelect from "../../ui/FormSelect";
+import FormSelectOptions from "../../ui/FormSelectOptions";
 
 function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
   const { createBooking, isCreating } = useCreateBooking();
   const { cabins: apiCabins, isLoading: isLoadingCabins } = useCabins();
   const { guests: apiGuests, isLoading: isLoadingGuests } = useGuests();
   // const { isEditing, editCabin } = useEditCabin();
-  // const isWorking = isCreating || isEditing;
+  const isWorking = isCreating || isLoadingCabins || isLoadingGuests;
 
   const { id: editId, ...editValues } = bookingToEdit;
   const isEditSession = Boolean(editId);
@@ -31,7 +33,10 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
 
   const cabins = apiCabins
     ? apiCabins.map((cabin) => {
-        return { label: cabin.name, value: cabin.id };
+        return {
+          label: `${cabin.name} - Max: ${cabin.maxCapacity}`,
+          value: cabin.id,
+        };
       })
     : [];
   const guests = apiGuests
@@ -42,12 +47,12 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
 
   function onSubmit(data) {
     console.log(data);
-    createBooking(data, {
-      onSuccess: () => {
-        reset();
-        onCloseModal?.();
-      },
-    });
+    // createBooking(data, {
+    //   onSuccess: () => {
+    //     reset();
+    //     onCloseModal?.();
+    //   },
+    // });
   }
 
   function onError(errors) {
@@ -56,13 +61,14 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
-      <FormRow label="Start Date">
+      <FormRow label="Start Date" error={errors?.startDate?.message}>
         <Input
           id="startDate"
           {...register("startDate", {
             required: "This field is required",
           })}
           type="date"
+          disabled={isWorking}
           onChange={(e) =>
             setValue(
               "numNights",
@@ -76,13 +82,14 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         {/* <DatePicker dateFormat='DD/MM/YYYY'  /> */}
       </FormRow>
 
-      <FormRow label="End Date">
+      <FormRow label="End Date" error={errors?.endDate?.message}>
         <Input
           id="endDate"
           {...register("endDate", {
             required: "This field is required",
           })}
           type="date"
+          disabled={isWorking}
           onChange={(e) =>
             setValue(
               "numNights",
@@ -96,7 +103,7 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         {/* <DatePicker dateFormat='DD/MM/YYYY'  /> */}
       </FormRow>
 
-      <FormRow label="Number of nights">
+      <FormRow label="Number of nights" error={errors?.numNights?.message}>
         <Input
           id="numNights"
           {...register("numNights", {
@@ -107,28 +114,52 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         />
       </FormRow>
 
-      <FormRow label="Number of guests">
+      <FormRow label="Guest" error={errors?.guestId?.message}>
+        <FormSelect
+          disabled={isWorking}
+          {...register("guestId", {
+            required: "This field is required",
+          })}
+        >
+          <FormSelectOptions options={guests} />
+        </FormSelect>
+      </FormRow>
+
+      <FormRow label="Number of guests" error={errors?.numGuests?.message}>
         <Input
           id="numGuests"
+          disabled={isWorking}
           {...register("numGuests", {
             required: "This field is required",
           })}
+          onChange={(e) => {}}
           type="number"
         />
       </FormRow>
 
-      <FormRow label="Add Breakfast">
-        <input
-          type="checkbox"
-          {...register("hasBreakfast", {
+      <FormRow label="Cabin" error={errors?.cabinId?.message}>
+        <FormSelect
+          disabled={isWorking}
+          {...register("cabinId", {
             required: "This field is required",
           })}
+        >
+          <FormSelectOptions options={cabins} />
+        </FormSelect>
+      </FormRow>
+
+      <FormRow label="Add Breakfast">
+        <input
+          disabled={isWorking}
+          type="checkbox"
+          {...register("hasBreakfast")}
         />
       </FormRow>
 
-      <FormRow label="Cabin Price">
+      <FormRow label="Cabin Price" error={errors?.cabinPrice?.message}>
         <Input
           id="cabinPrice"
+          disabled={isWorking}
           {...register("cabinPrice", {
             required: "This field is required",
           })}
@@ -136,9 +167,10 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         />
       </FormRow>
 
-      <FormRow label="Extras Price">
+      <FormRow label="Extras Price" error={errors?.extrasPrice?.message}>
         <Input
           id="extrasPrice"
+          disabled={isWorking}
           {...register("extrasPrice", {
             required: "This field is required",
           })}
@@ -146,9 +178,10 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         />
       </FormRow>
 
-      <FormRow label="Total Price">
+      <FormRow label="Total Price" error={errors?.totalPrice?.message}>
         <Input
           id="totalPrice"
+          disabled={isWorking}
           {...register("totalPrice", {
             required: "This field is required",
           })}
@@ -156,66 +189,29 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         />
       </FormRow>
 
-      <FormRow label="Status">
-        {/* <Select options={STATUSES} {...register("status")} /> */}
-        <select
+      <FormRow label="Status" error={errors?.status?.message}>
+        <FormSelect
+          disabled={isWorking}
           {...register("status", {
             required: "This field is required",
           })}
         >
-          {STATUSES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <FormSelectOptions options={STATUSES} />
+        </FormSelect>
       </FormRow>
 
       <FormRow label="Is paid">
-        <input
-          type="checkbox"
-          {...register("isPaid", {
-            required: "This field is required",
-          })}
-        />
+        <input disabled={isWorking} type="checkbox" {...register("isPaid")} />
       </FormRow>
 
-      <FormRow label="Notes">
-        <Textarea {...register("observations")} />
-      </FormRow>
-
-      <FormRow label="Cabin">
-        {/* <Select options={STATUSES} {...register("status")} /> */}
-        <select
-          {...register("cabinId", {
-            required: "This field is required",
-          })}
-        >
-          {cabins.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </FormRow>
-
-      <FormRow label="Guest">
-        {/* <Select options={STATUSES} {...register("status")} /> */}
-        <select
-          {...register("guestId", {
-            required: "This field is required",
-          })}
-        >
-          {guests.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      <FormRow label="Notes" error={errors?.observations?.message}>
+        <Textarea disabled={isWorking} {...register("observations")} />
       </FormRow>
 
       <FormRow>
-        <Button>{isEditSession ? "Edit booking" : "Create new booking"}</Button>
+        <Button disabled={isWorking}>
+          {isEditSession ? "Edit booking" : "Create new booking"}
+        </Button>
       </FormRow>
     </Form>
   );
