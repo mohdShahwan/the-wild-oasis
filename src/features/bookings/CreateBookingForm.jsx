@@ -4,16 +4,18 @@ import FormRow from "../../ui/FormRow";
 import Input from "../../ui/Input";
 
 import { differenceInDays } from "date-fns";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useCabins } from "../cabins/useCabins";
 import { useCreateBooking } from "./useCreateBooking";
 
-import "react-datepicker/dist/react-datepicker.css";
+import DatePicker from "react-multi-date-picker";
+import FormSelect from "../../ui/FormSelect";
+import FormSelectOptions from "../../ui/FormSelectOptions";
 import Textarea from "../../ui/Textarea";
 import { STATUSES } from "../../utils/constants";
 import { useGuests } from "./useGuests";
-import FormSelect from "../../ui/FormSelect";
-import FormSelectOptions from "../../ui/FormSelectOptions";
+import DatePanel from "react-multi-date-picker/plugins/date_panel";
+import "react-multi-date-picker/styles/backgrounds/bg-dark.css";
 
 function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
   const { createBooking, isCreating } = useCreateBooking();
@@ -25,10 +27,17 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
   const { id: editId, ...editValues } = bookingToEdit;
   const isEditSession = Boolean(editId);
 
-  const { register, handleSubmit, reset, getValues, formState, setValue } =
-    useForm({
-      defaultValues: isEditSession ? editValues : {},
-    });
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    getValues,
+    formState,
+    setValue,
+  } = useForm({
+    defaultValues: isEditSession ? editValues : {},
+  });
   const { errors } = formState;
 
   const cabins = apiCabins
@@ -61,46 +70,61 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
-      <FormRow label="Start Date" error={errors?.startDate?.message}>
-        <Input
-          id="startDate"
-          {...register("startDate", {
+      <FormRow label="Duration" error={errors?.duration?.message}>
+        <Controller
+          control={control}
+          name="duration"
+          rules={{
             required: "This field is required",
-          })}
-          type="date"
-          disabled={isWorking}
-          onChange={(e) =>
-            setValue(
-              "numNights",
-              differenceInDays(
-                new Date(getValues().endDate),
-                new Date(e.target.value)
-              )
-            )
-          }
+            validate: (arrayOfDates) =>
+              arrayOfDates === 2 || "Please choose a valid date range",
+          }}
+          render={({ field: { onChange, value } }) => (
+            <DatePicker
+              value={value}
+              onFocusedDateChange={(date) => {
+                console.log("focus date changed");
+                console.log(date);
+              }}
+              hideOnScroll
+              onChange={(datesArray) => {
+                console.log("CALLED");
+                console.log(datesArray);
+                onChange(datesArray);
+                if (datesArray?.length === 2) {
+                  setValue(
+                    "numNights",
+                    differenceInDays(
+                      new Date(datesArray.at(1)),
+                      new Date(datesArray.at(0))
+                    )
+                  );
+                }
+              }}
+              range
+              rangeHover
+              sort
+              numberOfMonths={2}
+              format="DD/MM/YYYY"
+              plugins={[<DatePanel key={1} />]}
+              style={{
+                fontSize: "1.4rem",
+                height: "4rem",
+                padding: "0.8rem 1.2rem",
+                border: "1px solid var(--color-grey-300)",
+                borderRadius: "var(--border-radius-sm)",
+                backgroundColor: "var(--color-grey-0)",
+                fontWeight: "500",
+                boxShadow: "var(--shadow-sm)",
+              }}
+              minDate={new Date()}
+              className="bg-dark"
+              editable={false}
+              dateSeparator=" - "
+              disabled={isWorking}
+            />
+          )}
         />
-        {/* <DatePicker dateFormat='DD/MM/YYYY'  /> */}
-      </FormRow>
-
-      <FormRow label="End Date" error={errors?.endDate?.message}>
-        <Input
-          id="endDate"
-          {...register("endDate", {
-            required: "This field is required",
-          })}
-          type="date"
-          disabled={isWorking}
-          onChange={(e) =>
-            setValue(
-              "numNights",
-              differenceInDays(
-                new Date(e.target.value),
-                new Date(getValues().startDate)
-              )
-            )
-          }
-        />
-        {/* <DatePicker dateFormat='DD/MM/YYYY'  /> */}
       </FormRow>
 
       <FormRow label="Number of nights" error={errors?.numNights?.message}>
@@ -208,7 +232,7 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
         <Textarea disabled={isWorking} {...register("observations")} />
       </FormRow>
 
-      <FormRow>
+      <FormRow hasButton={true}>
         <Button disabled={isWorking}>
           {isEditSession ? "Edit booking" : "Create new booking"}
         </Button>
