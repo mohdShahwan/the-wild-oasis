@@ -27,17 +27,17 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
   const { id: editId, ...editValues } = bookingToEdit;
   const isEditSession = Boolean(editId);
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    getValues,
-    formState,
-    setValue,
-  } = useForm({
-    defaultValues: isEditSession ? editValues : {},
-  });
+  const { register, control, handleSubmit, reset, formState, setValue } =
+    useForm({
+      defaultValues: isEditSession
+        ? editValues
+        : {
+            guestId: "",
+            cabinId: "",
+            status: "",
+            duration: [],
+          },
+    });
   const { errors } = formState;
 
   const cabins = apiCabins
@@ -55,18 +55,20 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
     : [];
 
   function onSubmit(data) {
-    console.log(data);
-    // createBooking(data, {
-    //   onSuccess: () => {
-    //     reset();
-    //     onCloseModal?.();
-    //   },
-    // });
+    data["startDate"] = new Date(data.duration[0]).toISOString();
+    data["endDate"] = new Date(data.duration[1]).toISOString();
+    delete data.duration;
+    createBooking(data, {
+      onSuccess: () => {
+        reset();
+        onCloseModal?.();
+      },
+    });
   }
 
-  function onError(errors) {
-    // console.log(errors);
-  }
+  // function onError(errors) {
+  //   // console.log(errors);
+  // }
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
@@ -77,21 +79,15 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
           rules={{
             required: "This field is required",
             validate: (arrayOfDates) =>
-              arrayOfDates === 2 || "Please choose a valid date range",
+              arrayOfDates.length === 2 || "Please choose a valid date range",
           }}
           render={({ field: { onChange, value } }) => (
             <DatePicker
               value={value}
-              onFocusedDateChange={(date) => {
-                console.log("focus date changed");
-                console.log(date);
-              }}
               hideOnScroll
               onChange={(datesArray) => {
-                console.log("CALLED");
-                console.log(datesArray);
-                onChange(datesArray);
                 if (datesArray?.length === 2) {
+                  onChange(datesArray);
                   setValue(
                     "numNights",
                     differenceInDays(
@@ -99,6 +95,9 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
                       new Date(datesArray.at(0))
                     )
                   );
+                } else if (datesArray?.length === 0) {
+                  onChange([]);
+                  setValue("numNights", "");
                 }
               }}
               range
@@ -110,6 +109,7 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
               style={{
                 fontSize: "1.4rem",
                 height: "4rem",
+                width: "21.5rem",
                 padding: "0.8rem 1.2rem",
                 border: "1px solid var(--color-grey-300)",
                 borderRadius: "var(--border-radius-sm)",
@@ -117,6 +117,7 @@ function CreateCabinForm({ bookingToEdit = {}, onCloseModal }) {
                 fontWeight: "500",
                 boxShadow: "var(--shadow-sm)",
               }}
+              calendarPosition="bottom"
               minDate={new Date()}
               className="bg-dark"
               editable={false}
